@@ -30,9 +30,9 @@ public class FoliosVO implements Serializable {
     @Column(name = "foliocompleto")
     private Long folioCompleto;
     
-    @Column(name = "SHA1")
+    @Column(name = "SHA125")
     private String sha1;
-
+    
     /**
      * @return the id
      */

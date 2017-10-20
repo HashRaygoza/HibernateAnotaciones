@@ -31,14 +31,19 @@ public class DataBaseTester {
             for(Class clase : clases) {
                 // Obtenemos la anotacion Tabla de la clase
                 Table tabla = (Table) clase.getAnnotation(Table.class);
-                Boolean tablaOK = dataBaseTester.existeTabla(cx, tabla.name());
                 
+                // Obtenemos el nombre de la clase SIN el esquema
+                int punto = tabla.name().indexOf(".");
+                String nombreTabla = tabla.name().substring(punto +1);
+                
+                // Buscamos si la tabla existe
+                Boolean tablaOK = dataBaseTester.existeTabla(cx, nombreTabla);                
                 resultadoTablas = resultadoTablas && tablaOK;
                 
                 if(tablaOK) {
                     // Obtenemos todos los campos de la clase indicada
                     Field[] fields = clase.getDeclaredFields();
-                    Boolean camposOK = dataBaseTester.existenColumnas(cx, tabla.name(), fields);
+                    Boolean camposOK = dataBaseTester.existenColumnas(cx, nombreTabla, fields);
                     
                     resultadoCampos = resultadoCampos && camposOK;
                 }                
@@ -55,38 +60,39 @@ public class DataBaseTester {
             System.out.println("Error al conectar a dB");
             e.printStackTrace();
         }
-
-    }
-
+    }    
+    
     /**
      * Verifica que la tabla indicada 
      * @param conexion Conexion a base de datos
      * @param nombreTabla Nombre de la tabla que deseamos verificar
      * @return True si la tabla existe, false en caso contrario
      */
-    public Boolean existeTabla(Connection conexion, String nombreTabla) {
-        Boolean existe = true;
+    Boolean existeTabla(Connection conexion, String nombreTabla) throws SQLException {
+        Boolean existe = false;
 
-        try {
-            DatabaseMetaData metadata = conexion.getMetaData();
-            ResultSet tabla = metadata.getTables(null, null, nombreTabla, null);
-
-            existe = tabla.next();
-            
-            if (existe == false) {
-                System.out.println("\nLa tabla " + nombreTabla + " NO existe");
-            } else {
-                System.out.println("\nLa tabla " + nombreTabla + " SI existe");
+        // Obtenemos los metadatos de la conexion
+        DatabaseMetaData metadata = conexion.getMetaData();
+        // Buscamos la tabla con el nombre indicado
+        ResultSet tabla = metadata.getTables(null, null, nombreTabla, null);
+        
+        // Para evitar falsos positivos buscamos que el nombre EXACTO exista
+        while(tabla.next() == true) {
+            String nombre = tabla.getString("TABLE_NAME");
+                        
+            if(nombre.compareTo(nombreTabla) == 0) {
+                System.out.println("EXISTE tabla " + nombreTabla);
+                existe = true;
             }
-
-        } catch (SQLException ex) {
-            System.out.println("Error de conexion a DB");
-            ex.printStackTrace();
         }
-
+        
+        if(existe == false) {
+            System.out.println("NO EXISTE tabla " + nombreTabla);
+        }
+        
         return existe;
-    }
-
+    }    
+    
     /**
      * Verificamos que las columnas de la tabla indicadas en la clase existan
      * @param conexion Conexion a base de datos
@@ -94,36 +100,37 @@ public class DataBaseTester {
      * @param campos Campos que deseamos verificar en la tabla
      * @return True si todos los campos existen, false si hay faltantes
      */
-    public Boolean existenColumnas(Connection conexion, String nombreTabla, Field[] campos) {
-        ResultSet data;
-        Boolean existen = true;
-        DatabaseMetaData metadata;
-
-        try {
-            metadata = conexion.getMetaData();
-
-            for (Field campo : campos) {
-                // Obtenemos la anotacion Column de cada uno de los campos
-                Column columna = campo.getAnnotation(Column.class);
-                data = metadata.getColumns(null, null, nombreTabla, columna.name());
-
-                if (data.next() == true) {
-                    existen = existen && true;
+    public Boolean existenColumnas(Connection conexion, String nombreTabla, Field[] campos) throws SQLException {
+        Boolean existen = false;
+        // Metadatos d ela conexion
+        DatabaseMetaData metadata = conexion.getMetaData();
+        
+        // Buscamos cada campo del arreglo
+        for(Field campo: campos) {
+            // Obtenemos la anotacion Column
+            Column columna = campo.getAnnotation(Column.class);
+            ResultSet data = metadata.getColumns(null, null, nombreTabla, columna.name());
+            Boolean campoExacto = false;
+            
+            // Para evitar falsos positivos buscamos el nombre EXACTO de la columna
+            while(data.next() == true) {
+                String nombreCampo = data.getString("COLUMN_NAME");
+                
+                if(nombreCampo.compareTo(columna.name()) == 0) {
                     System.out.println("\tEXISTE el campo " + nombreTabla + "." + columna.name());
-                } else {
-                    existen = existen && false;
-                    System.out.println("\tNO EXISTE el campo " + nombreTabla + "." + columna.name());
+                    campoExacto = true;
                 }
             }
-        } catch (SQLException e) {
-            System.out.println("ERROR DE CONEXION A DB");
-            e.printStackTrace();
-            return false;
-        }
-
+            
+            if(campoExacto == false) {
+                System.out.println("\tNO EXISTE el campo " + nombreTabla + "." + columna.name());
+            }
+            
+            existen = existen && campoExacto;
+        }        
         return existen;
     }
-
+    
     /**
      * Creamos la conexion a base de datos
      * @return Conexion a base de datos

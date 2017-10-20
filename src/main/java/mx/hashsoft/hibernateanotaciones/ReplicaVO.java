@@ -34,5 +34,47 @@ public class ReplicaVO implements Serializable {
     
     @Column(name = "datos")
     private String datos;
+
+    /**
+     * @return the id
+     */
+    public Long getId() {
+        return id;
+    }
+
+    /**
+     * @param id the id to set
+     */
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    /**
+     * @return the fecha
+     */
+    public Date getFecha() {
+        return fecha;
+    }
+
+    /**
+     * @param fecha the fecha to set
+     */
+    public void setFecha(Date fecha) {
+        this.fecha = fecha;
+    }
+
+    /**
+     * @return the datos
+     */
+    public String getDatos() {
+        return datos;
+    }
+
+    /**
+     * @param datos the datos to set
+     */
+    public void setDatos(String datos) {
+        this.datos = datos;
+    }
     
 }
