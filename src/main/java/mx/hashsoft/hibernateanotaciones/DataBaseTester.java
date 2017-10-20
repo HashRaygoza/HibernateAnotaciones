@@ -101,7 +101,7 @@ public class DataBaseTester {
      * @return True si todos los campos existen, false si hay faltantes
      */
     public Boolean existenColumnas(Connection conexion, String nombreTabla, Field[] campos) throws SQLException {
-        Boolean existen = false;
+        Boolean existen = true;
         // Metadatos d ela conexion
         DatabaseMetaData metadata = conexion.getMetaData();
         

@@ -30,7 +30,7 @@ public class FoliosVO implements Serializable {
     @Column(name = "foliocompleto")
     private Long folioCompleto;
     
-    @Column(name = "SHA125")
+    @Column(name = "SHA1")
     private String sha1;
     
     /**
